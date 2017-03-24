@@ -1,4 +1,5 @@
 <#
+
 New-ModuleManifest `
 -Path "C:\Users\pa1re\OneDrive\WindowsPowerShell\Modules\PoShHrdUtils\PoShHrdUtils.psd1" `
 -RootModule "C:\Users\pa1re\OneDrive\WindowsPowerShell\Modules\PoShHrdUtils\PoShHrdUtils.psm1" `
@@ -6,37 +7,19 @@ New-ModuleManifest `
 -CompanyName 'Radio Amateur' `
 -Copyright '(c)2017 Reginald Baalbergen (PA1REG)' `
 -Description 'Ham Radio Deluxe Utilities, Download and Update silent' `
--ModuleVersion 1.1 `
+-ModuleVersion 1.2 `
 -PowerShellVersion 5.0 `
 -FunctionsToExport 'Update-HamRadioDeluxe' `
 -AliasesToExport 'UH' `
+-ProjectUri 'https://github.com/PA1REG/PoShHrdUtils' `
+-HelpInfoUri 'https://github.com/PA1REG/PoShHrdUtils/blob/master/readme.md' `
 -ReleaseNotes 'Initial Release.'
-
-New-ModuleManifest [-Path] <String> [-NestedModules <Object[]>] [-Guid <Guid>] [-Author <String>]
- [-CompanyName <String>] [-Copyright <String>] [-RootModule <String>] [-ModuleVersion <Version>]
- [-Description <String>] [-ProcessorArchitecture <ProcessorArchitecture>] [-PowerShellVersion <Version>]
- [-ClrVersion <Version>] [-DotNetFrameworkVersion <Version>] [-PowerShellHostName <String>]
- [-PowerShellHostVersion <Version>] [-RequiredModules <Object[]>] [-TypesToProcess <String[]>]
- [-FormatsToProcess <String[]>] [-ScriptsToProcess <String[]>] [-RequiredAssemblies <String[]>]
- [-FileList <String[]>] [-ModuleList <Object[]>] [-FunctionsToExport <String[]>] [-AliasesToExport <String[]>]
- [-VariablesToExport <String[]>] [-CmdletsToExport <String[]>] [-DscResourcesToExport <String[]>]
- [-CompatiblePSEditions <String[]>] [-PrivateData <Object>] [-Tags <String[]>] [-ProjectUri <Uri>]
- [-LicenseUri <Uri>] [-IconUri <Uri>] [-ReleaseNotes <String>] [-HelpInfoUri <String>] [-PassThru]
- [-DefaultCommandPrefix <String>] [-WhatIf] [-Confirm] [<CommonParameters>]
  
-  Get-PSRepository
-  Register-PSRepository -Name Private –SourceLocation https://github.com/PA1REG/PoShHrdUtils
-  Set-PSRepository –Name Private –InstallationPolicy Trusted
- Find-Module -Name DebugPx -Repository PoShHrdUtils | Format-List *
-  Publish-Module -Name PoShHrdUtils -NuGetApiKey 'ab689bbd-15e8-4fcc-b3e7-46e903f48548'
   
-   #https://dfinke.github.io/2016/Quickly-Install-PowerShell-Modules-from-GitHub/
-   get-command -Module InstallModuleFromGitHub
-   Install-Module -Name InstallModuleFromGitHub -RequiredVersion 0.3
-   Install-ModuleFromGitHub -GitHubRepo /PA1REG/PoShHrdUtils
-   
-   
-  
+https://dfinke.github.io/2016/Quickly-Install-PowerShell-Modules-from-GitHub/
+get-command -Module InstallModuleFromGitHub
+Install-Module -Name InstallModuleFromGitHub -RequiredVersion 0.3
+Install-ModuleFromGitHub -GitHubRepo /PA1REG/PoShHrdUtils
 #>
 
 
@@ -61,11 +44,12 @@ function Get-HRDInstallLocation
         if ($InstallLocation)
         {
           Write-Verbose "Found Installation Location ($InstallLocation) for : $ProgramName"
+          Return $InstallLocation
         } else
         {
           Write-Verbose "Could not find Installation Location ($InstallLocation) for : $ProgramName"
+          Return $null
         }
-        Return $InstallLocation
       } Catch 
       {
         $ErrorMessage = $_.Exception.Message
@@ -73,7 +57,6 @@ function Get-HRDInstallLocation
         Write-Verbose "Unable to get Installation Location for : $ProgramName ($ErrorMessage, $FailedItem)"
         Return $null
       }
-
       Write-Verbose "End Module  : [$($MyInvocation.MyCommand)] *************************************"
     }     
 }
@@ -97,6 +80,7 @@ function Get-FileVersion
         $VersionInfo = (Get-Item $Path).VersionInfo.FileVersion
 #        $VersionInfo = (Get-Item $Path).VersionInfo.ProductVersion
         $VersionInfo = $VersionInfo.Trim()
+        Write-Verbose "Version for : $Path is $VersionInfo"
         Return $VersionInfo
       } Catch 
       {
@@ -153,7 +137,7 @@ function Get-HrdSetupExe
 
       Try 
       {
-        Write-Host "Start Downloading : $ProgramName from $HrdSetupURL" -ForegroundColor Green
+        Write-Host "Start Downloading $ProgramName from $HrdSetupURL" -ForegroundColor Green
         $DownLoadClient = new-object System.Net.WebClient
         $DownLoadClient.DownloadFile("$HrdSetupURL","$DownloadFile")
         #Invoke-WebRequest $HrdSetupURL -OutFile "$DownloadFile" 
@@ -188,6 +172,7 @@ function Install-Hrd
 
       Try 
       {
+        Write-Host "Start $ProgramName from $SetupFile" -ForegroundColor Green
         Write-Verbose "Start $SetupFile"
         Start-Process -FilePath "$SetupFile" -ArgumentList "/s"
         Write-Verbose "Start installation $SetupFile"
@@ -216,8 +201,8 @@ function Install-Hrd
                $TimeElaped =+ $TimeElaped + $Delaytime
                if ($TimeElaped -ge $TimeOut)
                {
-                 Write-Host "Timeout : Installation takes too long." -ForegroundColor Blue
-                 break
+                 Write-Host "Timeout : Installation takes too long ( > $TimeOut sec.)" -ForegroundColor Red
+                 BREAK
                }
            }
            Write-Host "Installation of $ProgramName succeeded"  -ForegroundColor Green ; $Status = 'Done'
@@ -292,20 +277,20 @@ function Update-HamRadioDeluxe
       $HrdInstallLocation = Get-HRDInstallLocation
       if ($HrdInstallLocation)
       {
-        Write-Host "$ProgramName is currently Installated in : $HrdInstallLocation" -ForegroundColor Green
+        Write-Host "$ProgramName is currently Installed in : $HrdInstallLocation" -ForegroundColor Green
         $HrdInstallVersion = Get-FileVersion -Path "$HrdInstallLocation/HamRadioDeluxe.exe"
         if ($HrdInstallVersion)
         {
           Write-Host "Current Installed Version : $HrdInstallVersion" -ForegroundColor Green
         } else
         {
-          Write-Host "Failed to detect version installation" -ForegroundColor Red
-#        BREAK
+          Write-Host "Failed to detect version installation, unable to update" -ForegroundColor Red
+          BREAK
         }  
       } else
       {
         Write-Host "Failed to detect current installation" -ForegroundColor Red
-#        BREAK
+        BREAK
       }  
 
       if ($DownloadPath)
@@ -327,7 +312,7 @@ function Update-HamRadioDeluxe
           } else
           {
             Write-Host "Failed to detect version installation" -ForegroundColor Red
-#          BREAK
+            BREAK
           }  
       } else
       {
@@ -341,26 +326,24 @@ function Update-HamRadioDeluxe
             Write-Host "Downloaded Version : $HrdDownloadedVersion" -ForegroundColor Green
           } else
           {
-            Write-Host "Failed to detect version installation" -ForegroundColor Red
-#          BREAK
+            Write-Host "Failed to detect version installation, unable to update" -ForegroundColor Red
+          BREAK
           }  
         } else
         {
           Write-Host "Failed to download" -ForegroundColor Red
-  #        BREAK
+          BREAK
         }  
       }
       
-    
       if ($HrdInstallVersion -eq $HrdDownloadedVersion -and -not $Force)
       {
-        Write-Host "Setup version is the same as installed version, no need to run setup." -ForegroundColor Red
+        Write-Host "Setup version is the same as installed version, no need to update." -ForegroundColor Red
       } else
       {
         Write-Host "Startup Setup : $DownloadSetupFile" -ForegroundColor Green
         Install-Hrd -SetupFile $DownloadSetupFile
       }  
-      
 
       Write-Verbose "End Module  : [$($MyInvocation.MyCommand)] *************************************"
     }
