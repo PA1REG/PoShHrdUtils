@@ -7,7 +7,8 @@
 
 ### Install
 ```powershell
-Install-Module -Name PoShHrdUtils
+Install-Module -Name InstallModuleFromGitHub -RequiredVersion 0.3
+Install-ModuleFromGitHub -GitHubRepo /PA1REG/PoShHrdUtils
 ```
 
 ### Documentation

@@ -8,9 +8,9 @@ New-ModuleManifest `
 -Description 'Ham Radio Deluxe Utilities, Download and Update silent' `
 -ModuleVersion 1.1 `
 -PowerShellVersion 5.0 `
--AliasesToExport * `
--ReleaseNotes 'HRDUtils'
-
+-FunctionsToExport 'Update-HamRadioDeluxe' `
+-AliasesToExport 'UH' `
+-ReleaseNotes 'Initial Release.'
 
 New-ModuleManifest [-Path] <String> [-NestedModules <Object[]>] [-Guid <Guid>] [-Author <String>]
  [-CompanyName <String>] [-Copyright <String>] [-RootModule <String>] [-ModuleVersion <Version>]
