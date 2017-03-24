@@ -7,7 +7,7 @@ New-ModuleManifest `
 -CompanyName 'Radio Amateur' `
 -Copyright '(c)2017 Reginald Baalbergen (PA1REG)' `
 -Description 'Ham Radio Deluxe Utilities, Download and Update silent' `
--ModuleVersion 1.2 `
+-ModuleVersion 1.3 `
 -PowerShellVersion 5.0 `
 -FunctionsToExport 'Update-HamRadioDeluxe', 'Install-HamRadioDeluxe' `
 -AliasesToExport 'UH', 'IH' `
@@ -58,6 +58,38 @@ function Get-HRDInstallLocation
         $ErrorMessage = $_.Exception.Message
         $FailedItem = $_.Exception.ItemName
         Write-Verbose "Unable to get Installation Location for : $ProgramName ($ErrorMessage, $FailedItem)"
+        Return $null
+      }
+      Write-Verbose "End Module  : [$($MyInvocation.MyCommand)] *************************************"
+    }     
+}
+
+function Get-ModuleVersion
+{
+ [CmdletBinding(
+ )]
+    param
+    (
+    )
+    begin
+    {
+      Write-Verbose "Start Module : [$($MyInvocation.MyCommand)] *************************************"
+      Try 
+      {
+        #$ProgramVersion = "$((Get-Module PoShHrdUtils).Version.Major) . $((Get-Module PoShHrdUtils).Version.Minor) . $((Get-Module PoShHrdUtils).Version.Revision)"
+        $Major = "$((Get-Module PoShHrdUtils).Version.Major)"
+        $Major = $Major.Trim()
+        $Minor = "$((Get-Module PoShHrdUtils).Version.Minor)"
+        $Minor = $Minor.Trim()
+        $Revision = "$((Get-Module PoShHrdUtils).Version.Revision)"
+        $Revision = $Revision.Trim()
+        $ProgramVersion = "$Major.$Minor.$Revision"
+        Return $ProgramVersion
+      } Catch 
+      {
+        $ErrorMessage = $_.Exception.Message
+        $FailedItem = $_.Exception.ItemName
+        Write-Verbose "Unable to get Module Version Info ($ErrorMessage, $FailedItem)"
         Return $null
       }
       Write-Verbose "End Module  : [$($MyInvocation.MyCommand)] *************************************"
@@ -286,9 +318,7 @@ function Update-HamRadioDeluxe
     {
       Write-Verbose "Start Module : [$($MyInvocation.MyCommand)] *************************************"
       $ProgramName = "Ham Radio Deluxe"
-      $ProgramVersion = "$((Get-Module PoShHrdUtils).Version.Major) . $((Get-Module PoShHrdUtils).Version.Minor) . $((Get-Module PoShHrdUtils).Version.Revision)"
-      $ProgramVersion = $ProgramVersion.Trim()
-      Write-Host "$ProgramName version : $ProgramVersion" -ForegroundColor Green
+      Write-Host "$ProgramName version : $(Get-ModuleVersion)" -ForegroundColor Green
       
       $HrdInstallLocation = Get-HRDInstallLocation
       if ($HrdInstallLocation)
@@ -422,9 +452,7 @@ function Install-HamRadioDeluxe
     {
       Write-Verbose "Start Module : [$($MyInvocation.MyCommand)] *************************************"
       $ProgramName = "Ham Radio Deluxe"
-      $ProgramVersion = "$((Get-Module PoShHrdUtils).Version.Major) . $((Get-Module PoShHrdUtils).Version.Minor) . $((Get-Module PoShHrdUtils).Version.Revision)"
-      $ProgramVersion = $ProgramVersion.Trim()
-      Write-Host "$ProgramName version : $ProgramVersion" -ForegroundColor Green
+      Write-Host "$ProgramName version : $(Get-ModuleVersion)" -ForegroundColor Green
       
  
       if ($DownloadPath)
