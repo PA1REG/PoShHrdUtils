@@ -9,8 +9,8 @@ New-ModuleManifest `
 -Description 'Ham Radio Deluxe Utilities, Download and Update silent' `
 -ModuleVersion 1.2 `
 -PowerShellVersion 5.0 `
--FunctionsToExport 'Update-HamRadioDeluxe' `
--AliasesToExport 'UH' `
+-FunctionsToExport 'Update-HamRadioDeluxe', 'Install-HamRadioDeluxe' `
+-AliasesToExport 'UH', 'IH' `
 -ProjectUri 'https://github.com/PA1REG/PoShHrdUtils' `
 -HelpInfoUri 'https://github.com/PA1REG/PoShHrdUtils/blob/master/readme.md' `
 -ReleaseNotes 'Initial Release.'
@@ -18,8 +18,11 @@ New-ModuleManifest `
   
 https://dfinke.github.io/2016/Quickly-Install-PowerShell-Modules-from-GitHub/
 get-command -Module InstallModuleFromGitHub
+
 Install-Module -Name InstallModuleFromGitHub -RequiredVersion 0.3
 Install-ModuleFromGitHub -GitHubRepo /PA1REG/PoShHrdUtils
+
+
 #>
 
 
@@ -160,7 +163,11 @@ function Install-Hrd
     param
     (
         [Parameter(Position=0, Mandatory=$false)]
-        [String] $SetupFile
+        [String] $SetupFile,
+        
+        [Parameter(Position=1, Mandatory=$false)]
+        [Switch] $Silent
+
     )
     begin
     {
@@ -174,7 +181,16 @@ function Install-Hrd
       {
         Write-Host "Start $ProgramName from $SetupFile" -ForegroundColor Green
         Write-Verbose "Start $SetupFile"
-        Start-Process -FilePath "$SetupFile" -ArgumentList "/s"
+        if ($Silent)
+        {
+          Write-Verbose "Start $SetupFile in Silent Mode."
+          Start-Process -FilePath "$SetupFile" -ArgumentList "/s"
+        } else
+        {
+          Write-Verbose "Start $SetupFile NOT in Silent Mode."
+          Start-Process -FilePath "$SetupFile" 
+        }
+
         Write-Verbose "Start installation $SetupFile"
       } Catch 
       {
@@ -349,5 +365,120 @@ function Update-HamRadioDeluxe
     }
 }
 
+
+function Install-HamRadioDeluxe
+{
+    <#
+        .SYNOPSIS
+            Function to download and install Ham Radio Deluxe.
+        .DESCRIPTION
+            This function download and installs Ham Radio Deleuxe with optional parameters for control.
+        .PARAMETER DownloadPath
+            Specify this parameter if you wish to download the Setup.exe to an other location.
+            Notes: 
+                * Default path = %USERPROFILE%/Downloads
+        .PARAMETER SetupFile
+            If you want to install from an already downloaded the Setup.exe, specify the path and Setup file. 
+        .PARAMETER Force
+            Specify to disable the already installed and downloaded version check, setup will run.
+        .EXAMPLE
+            PS> Update-HamRadioDeluxe 
+
+            This example download the Setup.exe to %USERPROFILE%/Downloads and runs the Setup.
+        .EXAMPLE
+            PS> Update-HamRadioDeluxe -DownloadPath "C:\Temp\"
+
+            This example download the Setup.exe to C:\Temp and runs the Setup.
+        .EXAMPLE
+            PS> Update-HamRadioDeluxe -SetupFile "C:\Temp\Setup 6.4.exe"
+
+            This example runs the from "C:\Temp\Setup 6.4.exe".
+        .EXAMPLE
+            PS> Update-HamRadioDeluxe -Force
+
+            This example download the Setup.exe to %USERPROFILE%/Downloads and runs the Setup. Version checking is disabeld.
+        .EXAMPLE
+            PS> Update-HamRadioDeluxe -SetupFile "C:\Temp\Setup 6.4.exe" -Force
+
+            This example runs the from "C:\Temp\Setup 6.4.exe". Version checking is disabeld.
+        .INPUTS
+        .OUTPUTS
+            $null
+    #>
+    [CmdletBinding()]
+    param
+    (
+        [Parameter(Position=0, Mandatory=$false)]
+        [String] $DownloadPath,
+
+        [Parameter(Position=1, Mandatory=$false)]
+        [String] $SetupFile,
+  
+        [Parameter(Position=2, Mandatory=$false)]
+        [Switch] $Force
+  
+    )
+    begin
+    {
+      Write-Verbose "Start Module : [$($MyInvocation.MyCommand)] *************************************"
+      $ProgramName = "Ham Radio Deluxe"
+      $ProgramVersion = "$((Get-Module PoShHrdUtils).Version.Major) . $((Get-Module PoShHrdUtils).Version.Minor) . $((Get-Module PoShHrdUtils).Version.Revision)"
+      $ProgramVersion = $ProgramVersion.Trim()
+      Write-Host "$ProgramName version : $ProgramVersion" -ForegroundColor Green
+      
+ 
+      if ($DownloadPath)
+      {
+        $DownloadDirectory = $DownloadPath
+      } else
+      {
+        $DownloadDirectory = "$env:USERPROFILE\Downloads"
+      }
+      
+      if ($SetupFile)
+      {
+          Write-Host "Install Setup file choosen $SetupFile" -ForegroundColor Green
+          $HrdDownloadedVersion = Get-FileVersion -Path "$SetupFile"
+          $DownloadSetupFile = $SetupFile
+          if ($HrdDownloadedVersion)
+          {
+            Write-Host "To install Version : $HrdDownloadedVersion" -ForegroundColor Green
+          } else
+          {
+            Write-Host "Failed to detect version installation" -ForegroundColor Red
+            BREAK
+          }  
+      } else
+      {
+        $DownloadSetupFile = "$DownloadDirectory\Setup.exe"  
+        if (Get-HrdSetupExe -DownloadFile $DownloadSetupFile)
+        {
+          #Write-Host "Successfully Downloaded" -ForegroundColor Green
+          $HrdDownloadedVersion = Get-FileVersion -Path "$DownloadSetupFile"
+          if ($HrdDownloadedVersion)
+          {
+            Write-Host "Downloaded Version : $HrdDownloadedVersion" -ForegroundColor Green
+          } else
+          {
+            Write-Host "Failed to detect version installation, unable to update" -ForegroundColor Red
+          BREAK
+          }  
+        } else
+        {
+          Write-Host "Failed to download" -ForegroundColor Red
+          BREAK
+        }  
+      }
+      
+      Write-Host "Startup Setup : $DownloadSetupFile" -ForegroundColor Green
+      Install-Hrd -SetupFile $DownloadSetupFile
+
+      Write-Verbose "End Module  : [$($MyInvocation.MyCommand)] *************************************"
+    }
+}
+
+
 Export-ModuleMember -function Update-HamRadioDeluxe -alias UH
+Export-ModuleMember -function Install-HamRadioDeluxe -alias IH
+
 
