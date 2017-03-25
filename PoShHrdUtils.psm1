@@ -7,7 +7,7 @@ New-ModuleManifest `
 -CompanyName 'Radio Amateur' `
 -Copyright '(c)2017 Reginald Baalbergen (PA1REG)' `
 -Description 'Ham Radio Deluxe Utilities, Download and Update silent' `
--ModuleVersion 1.3 `
+-ModuleVersion 1.4 `
 -PowerShellVersion 5.0 `
 -FunctionsToExport 'Update-HamRadioDeluxe', 'Install-HamRadioDeluxe' `
 -AliasesToExport 'UH', 'IH' `
@@ -20,6 +20,8 @@ https://dfinke.github.io/2016/Quickly-Install-PowerShell-Modules-from-GitHub/
 get-command -Module InstallModuleFromGitHub
 
 Install-Module -Name InstallModuleFromGitHub -RequiredVersion 0.3
+
+Install-Module -Name InstallModuleFromGitHub
 Install-ModuleFromGitHub -GitHubRepo /PA1REG/PoShHrdUtils
 
 
@@ -189,17 +191,13 @@ function Get-HrdSetupExe
 }
 
 
-function Install-Hrd
+function Update-Hrd
 {
     [CmdletBinding()]
     param
     (
         [Parameter(Position=0, Mandatory=$false)]
-        [String] $SetupFile,
-        
-        [Parameter(Position=1, Mandatory=$false)]
-        [Switch] $Silent
-
+        [String] $SetupFile
     )
     begin
     {
@@ -213,16 +211,7 @@ function Install-Hrd
       {
         Write-Host "Start $ProgramName from $SetupFile" -ForegroundColor Green
         Write-Verbose "Start $SetupFile"
-        if ($Silent)
-        {
-          Write-Verbose "Start $SetupFile in Silent Mode."
-          Start-Process -FilePath "$SetupFile" -ArgumentList "/s"
-        } else
-        {
-          Write-Verbose "Start $SetupFile NOT in Silent Mode."
-          Start-Process -FilePath "$SetupFile" 
-        }
-
+        Start-Process -FilePath "$SetupFile" -ArgumentList "/s"
         Write-Verbose "Start installation $SetupFile"
       } Catch 
       {
@@ -261,6 +250,39 @@ function Install-Hrd
     }
 }
 
+
+function Install-Hrd
+{
+    [CmdletBinding()]
+    param
+    (
+        [Parameter(Position=0, Mandatory=$false)]
+        [String] $SetupFile
+    )
+    begin
+    {
+      Write-Verbose "Start Module : [$($MyInvocation.MyCommand)] *************************************"
+      $ProgramName = "Ham Radio Deluxe"
+      $Delaytime = 5
+      $TimeElaped = 0
+      $TimeOut = 500
+
+      Try 
+      {
+        Write-Host "Start $ProgramName from $SetupFile" -ForegroundColor Green
+        Write-Verbose "Start $SetupFile"
+        Start-Process -FilePath "$SetupFile" 
+        Write-Verbose "Start installation $SetupFile"
+      } Catch 
+      {
+        $ErrorMessage = $_.Exception.Message
+        $FailedItem = $_.Exception.ItemName
+        Write-Verbose "Unabe to start installation $SetupFile ($ErrorMessage, $FailedItem)"
+       BREAK
+      }
+     Write-Verbose "End Module  : [$($MyInvocation.MyCommand)] *************************************"
+    }
+}
 
 function Update-HamRadioDeluxe
 {
@@ -388,7 +410,7 @@ function Update-HamRadioDeluxe
       } else
       {
         Write-Host "Startup Setup : $DownloadSetupFile" -ForegroundColor Green
-        Install-Hrd -SetupFile $DownloadSetupFile
+        Update-Hrd -SetupFile $DownloadSetupFile
       }  
 
       Write-Verbose "End Module  : [$($MyInvocation.MyCommand)] *************************************"
